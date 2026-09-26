@@ -1,0 +1,181 @@
+local PiggyGui = Instance.new("ScreenGui")
+PiggyGui.Name = "PiggyGui"
+PiggyGui.Parent = game.CoreGui
+
+local MainFrame = Instance.new("Frame", PiggyGui)
+MainFrame.Name = "MainFrame"
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.Position = UDim2.new(0.08, 0, 0.42, 0)
+MainFrame.Size = UDim2.new(0, 280, 0, 320)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+
+local MainCorner = Instance.new("UICorner", MainFrame)
+MainCorner.CornerRadius = UDim.new(0, 8)
+
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(60, 60, 70)
+MainStroke.Thickness = 1.5
+
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Name = "TitleBar"
+TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+TitleBar.Size = UDim2.new(1, 0, 0, 32)
+TitleBar.BorderSizePixel = 0
+TitleBar.Active = true
+
+local TitleCorner = Instance.new("UICorner", TitleBar)
+TitleCorner.CornerRadius = UDim.new(0, 8)
+
+local TitleText = Instance.new("TextLabel", TitleBar)
+TitleText.Size = UDim2.new(1, -40, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "Vật phẩm hiện có - made by KhoiRoScript"
+TitleText.TextSize = 12
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+
+task.spawn(function()
+	local hue = 0
+	while task.wait(0.03) do
+		hue = (hue + 0.005) % 1
+		TitleText.TextColor3 = Color3.fromHSV(hue, 0.8, 1)
+	end
+end)
+
+local ToggleBtn = Instance.new("TextButton", TitleBar)
+ToggleBtn.Size = UDim2.new(0, 24, 0, 24)
+ToggleBtn.Position = UDim2.new(1, -28, 0, 4)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+ToggleBtn.Text = "-"
+ToggleBtn.TextColor3 = Color3.fromRGB(250, 250, 250)
+ToggleBtn.TextSize = 14
+ToggleBtn.Font = Enum.Font.GothamBold
+
+local ToggleCorner = Instance.new("UICorner", ToggleBtn)
+ToggleCorner.CornerRadius = UDim.new(0, 4)
+
+local isMinimized = false
+ToggleBtn.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	if isMinimized then
+		MainFrame:TweenSize(UDim2.new(0, 280, 0, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
+		ToggleBtn.Text = "+"
+	else
+		MainFrame:TweenSize(UDim2.new(0, 280, 0, 320), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
+		ToggleBtn.Text = "-"
+	end
+end)
+
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	MainFrame.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end
+
+TitleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
+
+local ScrollingFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollingFrame.Name = "ScrollingFrame"
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.Position = UDim2.new(0, 6, 0, 38)
+ScrollingFrame.Size = UDim2.new(1, -12, 1, -44)
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.ScrollBarThickness = 4
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local UIGridLayout = Instance.new("UIGridLayout", ScrollingFrame)
+UIGridLayout.CellSize = UDim2.new(0, 82, 0, 82)
+UIGridLayout.CellPadding = UDim2.new(0, 6, 0, 6)
+
+while task.wait(1) do
+	local a = workspace:GetDescendants()
+	local items = {}
+	local itemframes = ScrollingFrame:GetChildren()
+
+	for i = 1, #itemframes do
+		if itemframes[i].ClassName == "TextButton" then
+			itemframes[i]:Destroy()
+		end
+	end
+
+	for i = 1, #a do
+		if a[i].Name == "ItemPickupScript" and a[i].Parent:FindFirstChild("ClickDetector") then
+			table.insert(items, a[i].Parent)
+		end
+	end
+
+	for i = 1, #items do
+		local ItemFrame = Instance.new("TextButton", ScrollingFrame)
+		ItemFrame.Name = "ItemFrame"
+		ItemFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+		ItemFrame.BorderSizePixel = 0
+		ItemFrame.Text = ""
+
+		local ItemCorner = Instance.new("UICorner", ItemFrame)
+		ItemCorner.CornerRadius = UDim.new(0, 6)
+
+		local View = Instance.new("ViewportFrame", ItemFrame)
+		View.Name = "View"
+		View.Size = UDim2.new(1, 0, 1, 0)
+		View.BackgroundTransparency = 1
+		View.BorderSizePixel = 0
+
+		local object = items[i]
+		local viewportclone = object:Clone()
+		viewportclone.Parent = View
+
+		local cam = Instance.new("Camera", viewportclone)
+		cam.CameraType = Enum.CameraType.Fixed
+		local objectPosition = object.Position
+		local cameraPosition = objectPosition + Vector3.new(0, 3, 0)
+		cam.CoordinateFrame = CFrame.new(cameraPosition, objectPosition)
+		View.CurrentCamera = cam
+
+		ItemFrame.MouseButton1Down:Connect(function()
+			if items[i]:FindFirstChild("ClickDetector") then
+				local cpos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+				task.wait(0.05)
+				game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = items[i].CFrame
+				task.wait(0.1)
+				fireclickdetector(items[i].ClickDetector)
+				task.wait(0.3)
+				game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cpos
+			end
+		end)
+	end
+end
